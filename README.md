@@ -45,14 +45,14 @@ Array of ListItem.
 
 ### Features
 
-- [] add an new item
-- [] remove an item from the list
-- [] edit an item
-- [] mark an item as DONE
-- [] show progress on an item
-- [] group items (and tag them)
+- [ ] add an new item
+- [ ] remove an item from the list
+- [ ] edit an item
+- [ ] mark an item as DONE
+- [ ] show progress on an item
+- [ ] group items (and tag them)
 
 Advance:
 
-- [] auto recognize (similar to add item to google calendar)
-- [] sync with calendar
+- [ ] auto recognize (similar to add item to google calendar)
+- [ ] sync with calendar
