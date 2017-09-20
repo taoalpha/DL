@@ -5,6 +5,7 @@ import android.content.DialogInterface;
 import android.content.ContentValues;
 
 import android.os.Bundle;
+import android.support.v4.view.NestedScrollingChildHelper;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.Toolbar;
@@ -31,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
     private Helper dHelper;
-    private ListView mTaskListView;
+    private ListView mItemListView;
     private ArrayAdapter<String> mAdapter;
 
     @Override
@@ -42,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         dHelper = new Helper(this);
-        mTaskListView = (ListView) findViewById(R.id.list_todo);
+        mItemListView = (ListView) findViewById(R.id.item_list);
 
         updateUI();
     }
@@ -62,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         switch (id) {
-            case R.id.action_add_task:
+            case R.id.action_add_item:
                 showAlert();
                 return true;
 
@@ -76,19 +77,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showAlert() {
-        final EditText taskEditText = new EditText(this);
+        final EditText itemEditText = new EditText(this);
         AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Add a new task")
+                .setTitle("Add a new item")
                 .setMessage("What do you want to do next?")
-                .setView(taskEditText)
+                .setView(itemEditText)
                 .setPositiveButton("Add", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        String task = String.valueOf(taskEditText.getText());
+                        String item = String.valueOf(itemEditText.getText());
                         SQLiteDatabase db = dHelper.getWritableDatabase();
                         ContentValues values = new ContentValues();
-                        values.put(Schema.TaskEntry.COL_TASK_TITLE, task);
-                        db.insertWithOnConflict(Schema.TaskEntry.TABLE,
+                        values.put(Schema.ItemEntry.TITLE, item);
+                        db.insertWithOnConflict(Schema.ItemEntry.TABLE,
                                 null,
                                 values,
                                 SQLiteDatabase.CONFLICT_REPLACE);
@@ -102,25 +103,32 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateUI() {
-        ArrayList<String> taskList = new ArrayList<>();
+        ArrayList<String> itemList = new ArrayList<>();
         SQLiteDatabase db = dHelper.getReadableDatabase();
-        Cursor cursor = db.query(Schema.TaskEntry.TABLE,
-                new String[]{Schema.TaskEntry._ID, Schema.TaskEntry.COL_TASK_TITLE},
+
+
+//        Cursor c = db.query(Schema.ItemEntry.TABLE, null, null, null, null, null, null);
+//        Log.d(TAG, c.getColumnNames().length + "");
+
+        Cursor cursor = db.query(Schema.ItemEntry.TABLE,
+                new String[]{Schema.ItemEntry._ID, Schema.ItemEntry.TITLE, Schema.ItemEntry.CREATED},
                 null, null, null, null, null);
         while (cursor.moveToNext()) {
-            int idx = cursor.getColumnIndex(Schema.TaskEntry.COL_TASK_TITLE);
-            taskList.add(cursor.getString(idx));
+            int idx = cursor.getColumnIndex(Schema.ItemEntry.TITLE);
+//            String t = cursor.getString(cursor.getColumnIndex(Schema.ItemEntry.CREATED));
+//            Log.d(TAG, t);
+            itemList.add(cursor.getString(idx));
         }
 
         if (mAdapter == null) {
             mAdapter = new ArrayAdapter<>(this,
                     R.layout.item,
-                    R.id.task_title,
-                    taskList);
-            mTaskListView.setAdapter(mAdapter);
+                    R.id.item_title,
+                    itemList);
+            mItemListView.setAdapter(mAdapter);
         } else {
             mAdapter.clear();
-            mAdapter.addAll(taskList);
+            mAdapter.addAll(itemList);
             mAdapter.notifyDataSetChanged();
         }
 
@@ -128,14 +136,14 @@ public class MainActivity extends AppCompatActivity {
         db.close();
     }
 
-    public void deleteTask(View view) {
+    public void deleteItem(View view) {
         View parent = (View) view.getParent();
-        TextView taskTextView = (TextView) parent.findViewById(R.id.task_title);
-        String task = String.valueOf(taskTextView.getText());
+        TextView itemTextView = (TextView) parent.findViewById(R.id.item_title);
+        String item = String.valueOf(itemTextView.getText());
         SQLiteDatabase db = dHelper.getWritableDatabase();
-        db.delete(Schema.TaskEntry.TABLE,
-                Schema.TaskEntry.COL_TASK_TITLE + " = ?",
-                new String[]{task});
+        db.delete(Schema.ItemEntry.TABLE,
+                Schema.ItemEntry.TITLE + " = ?",
+                new String[]{item});
         db.close();
         updateUI();
     }
