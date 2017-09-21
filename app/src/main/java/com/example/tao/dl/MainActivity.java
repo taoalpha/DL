@@ -9,6 +9,7 @@ import android.support.v4.view.NestedScrollingChildHelper;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.Toolbar;
+import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -44,8 +45,18 @@ public class MainActivity extends AppCompatActivity {
 
         dHelper = new Helper(this);
         mItemListView = (ListView) findViewById(R.id.item_list);
-
-        updateUI();
+        //click item to edit detail of items
+        mItemListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                                                 @Override
+                                                 public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                                                     String clickedItem = (String) mItemListView.getItemAtPosition(i);
+                                                     Intent intent = new Intent(MainActivity.this, EditItem.class);
+                                                     intent.putExtra("title", clickedItem);
+                                                     startActivity(intent);
+                                                     }
+                                                 }
+                                             );
+                updateUI();
     }
 
     @Override
