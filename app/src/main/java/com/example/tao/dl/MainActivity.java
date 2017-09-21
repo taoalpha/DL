@@ -83,6 +83,7 @@ public class MainActivity extends AppCompatActivity {
                     values,
                     SQLiteDatabase.CONFLICT_REPLACE);
             db.close();
+            itemText.setText("");
             updateUI();
         }
     }
