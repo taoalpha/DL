@@ -13,10 +13,17 @@
     </style>
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
     <style name="AppTheme.AddItemPop">
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowCloseOnTouchOutside">true</item>
         <item name="android:background">@color/cardview_light_background</item>
+    </style>
+
+
+    <style name="ListItem" parent="@android:style/Widget.ListView">
+        <item name="android:textColor">#ff0000</item>
+        <item name="android:typeface">monospace</item>
     </style>
 
 </resources>
