@@ -10,6 +10,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.Toolbar;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -17,6 +18,8 @@ import android.widget.ArrayAdapter;
 import android.view.Menu;
 import android.view.View;
 import android.view.MenuItem;
+
+import android.support.design.widget.Snackbar;
 
 
 import android.util.Log;
@@ -35,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
     private Helper dHelper;
     private ListView mItemListView;
     private ArrayAdapter<String> mAdapter;
+    private EditText itemText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +49,8 @@ public class MainActivity extends AppCompatActivity {
 
         dHelper = new Helper(this);
         mItemListView = (ListView) findViewById(R.id.item_list);
+        itemText = (EditText) findViewById(R.id.editText);
+
         //click item to edit detail of items
         mItemListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                                                  @Override
@@ -57,6 +63,29 @@ public class MainActivity extends AppCompatActivity {
                                                  }
                                              );
                 updateUI();
+
+
+    }
+
+    // add an item to DB
+    public void addItem(View view) {
+        String item = itemText.getText().toString().trim();
+        if(item.isEmpty() || item.length() == 0 || item.equals("") || item == null) {
+            Snackbar mySnackbar = Snackbar.make(findViewById(R.id.addBtn),
+                    "Item can not be empty!", Snackbar.LENGTH_SHORT);
+            mySnackbar.show();
+        } else {
+            SQLiteDatabase db = dHelper.getWritableDatabase();
+            ContentValues values = new ContentValues();
+            values.put(Schema.ItemEntry.TITLE, item);
+            db.insertWithOnConflict(Schema.ItemEntry.TABLE,
+                    null,
+                    values,
+                    SQLiteDatabase.CONFLICT_REPLACE);
+            db.close();
+            itemText.setText("");
+            updateUI();
+        }
     }
 
     @Override
@@ -74,10 +103,6 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         switch (id) {
-            case R.id.action_add_item:
-                showAlert();
-                return true;
-
             case R.id.action_settings:
                 Log.d(TAG, "settings");
                 return true;
@@ -85,32 +110,6 @@ public class MainActivity extends AppCompatActivity {
             default:
                 return super.onOptionsItemSelected(item);
         }
-    }
-
-    private void showAlert() {
-        final EditText itemEditText = new EditText(this);
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Add a new item")
-                .setMessage("What do you want to do next?")
-                .setView(itemEditText)
-                .setPositiveButton("Add", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        String item = String.valueOf(itemEditText.getText());
-                        SQLiteDatabase db = dHelper.getWritableDatabase();
-                        ContentValues values = new ContentValues();
-                        values.put(Schema.ItemEntry.TITLE, item);
-                        db.insertWithOnConflict(Schema.ItemEntry.TABLE,
-                                null,
-                                values,
-                                SQLiteDatabase.CONFLICT_REPLACE);
-                        db.close();
-                        updateUI();
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .create();
-        dialog.show();
     }
 
     private void updateUI() {
