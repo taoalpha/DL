@@ -32,6 +32,8 @@ import android.database.sqlite.SQLiteDatabase;
 import com.example.tao.dl.db.Schema;
 import com.example.tao.dl.db.Helper;
 
+import static com.example.tao.dl.R.layout.item;
+
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
@@ -50,19 +52,7 @@ public class MainActivity extends AppCompatActivity {
         dHelper = new Helper(this);
         mItemListView = (ListView) findViewById(R.id.item_list);
         itemText = (EditText) findViewById(R.id.editText);
-
-        //click item to edit detail of items
-        mItemListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                                                 @Override
-                                                 public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                                                     String clickedItem = (String) mItemListView.getItemAtPosition(i);
-                                                     Intent intent = new Intent(MainActivity.this, EditItem.class);
-                                                     intent.putExtra("title", clickedItem);
-                                                     startActivity(intent);
-                                                     }
-                                                 }
-                                             );
-                updateUI();
+        updateUI();
 
 
     }
@@ -132,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (mAdapter == null) {
             mAdapter = new ArrayAdapter<>(this,
-                    R.layout.item,
+                    item,
                     R.id.item_title,
                     itemList);
             mItemListView.setAdapter(mAdapter);
@@ -146,6 +136,14 @@ public class MainActivity extends AppCompatActivity {
         db.close();
     }
 
+    public void editItem(View view) {
+        View parent = (View) view.getParent();
+        TextView itemTextView = (TextView) parent.findViewById(R.id.item_title);
+        String item = String.valueOf(itemTextView.getText());
+        Intent intent = new Intent(MainActivity.this, EditItem.class);
+        intent.putExtra("title", item);
+        startActivity(intent);
+    }
     public void deleteItem(View view) {
         View parent = (View) view.getParent();
         TextView itemTextView = (TextView) parent.findViewById(R.id.item_title);
