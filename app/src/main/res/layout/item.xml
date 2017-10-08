@@ -4,23 +4,27 @@
     android:layout_height="match_parent"
     android:layout_gravity="center_vertical">
 
-    <TextView
-        android:id="@+id/item_title"
+    <CheckBox
+        android:id="@+id/item_check"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:text="Hello"
-        android:onClick="editItem"
-        style="@style/ListItem" />
+        android:onClick="markDone"
+        android:layout_marginTop="0dp" />
 
-    <Button
-        android:id="@+id/item_delete"
+    <TextView
+        android:id="@+id/list_item"
+        style="@style/ListItem"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentRight="true"
-        android:onClick="deleteItem"
-        android:text="Done" />
+        android:layout_alignBaseline="@+id/item_check"
+        android:layout_alignBottom="@+id/item_check"
+        android:layout_alignTop="@+id/item_check"
+        android:layout_toEndOf="@+id/item_check"
+        android:onClick="editItem"
+        android:text="hello"
+        android:textColor="@android:color/holo_blue_dark"
+        android:textStyle="bold" />
 
 </RelativeLayout>

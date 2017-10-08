@@ -9,9 +9,11 @@ import android.support.v4.view.NestedScrollingChildHelper;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.Toolbar;
+import android.view.KeyEvent;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.CheckBox;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.ArrayAdapter;
@@ -20,6 +22,7 @@ import android.view.View;
 import android.view.MenuItem;
 
 import android.support.design.widget.Snackbar;
+import android.graphics.Paint;
 
 
 import android.util.Log;
@@ -54,14 +57,30 @@ public class MainActivity extends AppCompatActivity {
         itemText = (EditText) findViewById(R.id.editText);
         updateUI();
 
-
+        // enter to save
+        itemText.setOnKeyListener(new View.OnKeyListener() {
+            @Override
+            public boolean onKey(View view, int i, KeyEvent keyEvent) {
+                if (keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
+                    switch (i) {
+                        case KeyEvent.KEYCODE_DPAD_CENTER:
+                        case KeyEvent.KEYCODE_ENTER:
+                            addItem(view);
+                            return true;
+                        default:
+                            break;
+                    }
+                }
+                return false;
+            }
+        });
     }
 
     // add an item to DB
     public void addItem(View view) {
         String item = itemText.getText().toString().trim();
         if(item.isEmpty() || item.length() == 0 || item.equals("") || item == null) {
-            Snackbar mySnackbar = Snackbar.make(findViewById(R.id.addBtn),
+            Snackbar mySnackbar = Snackbar.make(findViewById(R.id.editText),
                     "Item can not be empty!", Snackbar.LENGTH_SHORT);
             mySnackbar.show();
         } else {
@@ -111,19 +130,19 @@ public class MainActivity extends AppCompatActivity {
 //        Log.d(TAG, c.getColumnNames().length + "");
 
         Cursor cursor = db.query(Schema.ItemEntry.TABLE,
-                new String[]{Schema.ItemEntry._ID, Schema.ItemEntry.TITLE, Schema.ItemEntry.CREATED},
+                new String[]{Schema.ItemEntry._ID, Schema.ItemEntry.TITLE, Schema.ItemEntry.STATUS},
                 null, null, null, null, null);
         while (cursor.moveToNext()) {
             int idx = cursor.getColumnIndex(Schema.ItemEntry.TITLE);
-//            String t = cursor.getString(cursor.getColumnIndex(Schema.ItemEntry.CREATED));
-//            Log.d(TAG, t);
+//            String t = cursor.getString(cursor.getColumnIndex(Schema.ItemEntry.STATUS));
+//            if (t != null) Log.d(TAG, t);
             itemList.add(cursor.getString(idx));
         }
 
         if (mAdapter == null) {
             mAdapter = new ArrayAdapter<>(this,
                     item,
-                    R.id.item_title,
+                    R.id.list_item,
                     itemList);
             mItemListView.setAdapter(mAdapter);
         } else {
@@ -138,15 +157,38 @@ public class MainActivity extends AppCompatActivity {
 
     public void editItem(View view) {
         View parent = (View) view.getParent();
-        TextView itemTextView = (TextView) parent.findViewById(R.id.item_title);
+        TextView itemTextView = (TextView) parent.findViewById(R.id.list_item);
         String item = String.valueOf(itemTextView.getText());
         Intent intent = new Intent(MainActivity.this, EditItem.class);
         intent.putExtra("title", item);
         startActivity(intent);
     }
+
+    public void markDone(View view) {
+
+        boolean checked = ((CheckBox) view).isChecked();
+        View parent = (View) view.getParent();
+        TextView itemTextView = (TextView) parent.findViewById(R.id.list_item);
+
+        // strikethrough
+        if (checked) {
+            itemTextView.setPaintFlags(itemTextView.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+        } else {
+            itemTextView.setPaintFlags(itemTextView.getPaintFlags() & (~ Paint.STRIKE_THRU_TEXT_FLAG));
+        }
+
+        String item = String.valueOf(itemTextView.getText());
+        SQLiteDatabase db = dHelper.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(Schema.ItemEntry.STATUS, checked ? "completed" : "ongoing");
+        db.update(Schema.ItemEntry.TABLE, values, Schema.ItemEntry.TITLE + " = ?", new String[]{item});
+        db.close();
+        updateUI();
+    }
+
     public void deleteItem(View view) {
         View parent = (View) view.getParent();
-        TextView itemTextView = (TextView) parent.findViewById(R.id.item_title);
+        TextView itemTextView = (TextView) parent.findViewById(R.id.list_item);
         String item = String.valueOf(itemTextView.getText());
         SQLiteDatabase db = dHelper.getWritableDatabase();
         db.delete(Schema.ItemEntry.TABLE,

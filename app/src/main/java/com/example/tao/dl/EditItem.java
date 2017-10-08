@@ -34,7 +34,7 @@ import java.sql.Timestamp;
 
 import static android.R.attr.description;
 import static android.R.attr.onClick;
-import static com.example.tao.dl.R.id.item_title;
+import static com.example.tao.dl.R.id.list_item;
 
 /**
  * Created by mengyingfan on 9/20/17.
