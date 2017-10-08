@@ -1,22 +1,16 @@
 package com.example.tao.dl;
 
 import android.content.Intent;
-import android.content.DialogInterface;
 import android.content.ContentValues;
 
 import android.os.Bundle;
-import android.support.v4.view.NestedScrollingChildHelper;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.Toolbar;
 import android.view.KeyEvent;
-import android.widget.AdapterView;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.CheckBox;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.ArrayAdapter;
 import android.view.Menu;
 import android.view.View;
 import android.view.MenuItem;
@@ -27,6 +21,7 @@ import android.graphics.Paint;
 
 import android.util.Log;
 import java.util.ArrayList;
+import java.util.List;
 
 
 import android.database.Cursor;
@@ -35,14 +30,18 @@ import android.database.sqlite.SQLiteDatabase;
 import com.example.tao.dl.db.Schema;
 import com.example.tao.dl.db.Helper;
 
-import static com.example.tao.dl.R.layout.item;
+import com.mcxtzhang.swipemenulib.SwipeMenuLayout;
+
+import com.mcxtzhang.commonadapter.lvgv.CommonAdapter;
+import com.mcxtzhang.commonadapter.lvgv.ViewHolder;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
     private Helper dHelper;
     private ListView mItemListView;
-    private ArrayAdapter<String> mAdapter;
+    private List<ListItem> itemList;
+    private CommonAdapter mAdapter;
     private EditText itemText;
 
     @Override
@@ -55,7 +54,6 @@ public class MainActivity extends AppCompatActivity {
         dHelper = new Helper(this);
         mItemListView = (ListView) findViewById(R.id.item_list);
         itemText = (EditText) findViewById(R.id.editText);
-        updateUI();
 
         // enter to save
         itemText.setOnKeyListener(new View.OnKeyListener() {
@@ -74,6 +72,33 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
         });
+
+        // initialize list data
+        initData();
+
+        mItemListView.setAdapter(new CommonAdapter<ListItem>(this, itemList, R.layout.item) {
+            @Override
+            public void convert(final ViewHolder holder, ListItem item, final int position) {
+                //((SwipeMenuLayout)holder.getConvertView()).setIos(false);
+                holder.setText(R.id.list_item, item.title);
+                holder.setOnClickListener(R.id.list_item, new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        editItem(v);
+                    }
+                });
+
+                holder.setOnClickListener(R.id.btnDelete, new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        ((SwipeMenuLayout) holder.getConvertView()).quickClose();
+                        ListItem item = itemList.remove(position);
+                        deleteItem(item);
+                        notifyDataSetChanged();
+                    }
+                });
+            }
+        });
     }
 
     // add an item to DB
@@ -87,13 +112,20 @@ public class MainActivity extends AppCompatActivity {
             SQLiteDatabase db = dHelper.getWritableDatabase();
             ContentValues values = new ContentValues();
             values.put(Schema.ItemEntry.TITLE, item);
+
+            // all initial status default to ongoing
+            values.put(Schema.ItemEntry.STATUS, "ongoing");
             db.insertWithOnConflict(Schema.ItemEntry.TABLE,
                     null,
                     values,
                     SQLiteDatabase.CONFLICT_REPLACE);
             db.close();
             itemText.setText("");
-            updateUI();
+            itemList.add(new ListItem(item, "", "ongoing"));
+            if (mAdapter == null) {
+                mAdapter = (CommonAdapter)mItemListView.getAdapter();
+            }
+            mAdapter.notifyDataSetChanged();
         }
     }
 
@@ -121,34 +153,17 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void updateUI() {
-        ArrayList<String> itemList = new ArrayList<>();
+    private void initData() {
+        itemList = new ArrayList<>();
         SQLiteDatabase db = dHelper.getReadableDatabase();
-
-
-//        Cursor c = db.query(Schema.ItemEntry.TABLE, null, null, null, null, null, null);
-//        Log.d(TAG, c.getColumnNames().length + "");
-
         Cursor cursor = db.query(Schema.ItemEntry.TABLE,
-                new String[]{Schema.ItemEntry._ID, Schema.ItemEntry.TITLE, Schema.ItemEntry.STATUS},
+                new String[]{Schema.ItemEntry._ID, Schema.ItemEntry.TITLE, Schema.ItemEntry.DESC, Schema.ItemEntry.STATUS},
                 null, null, null, null, null);
         while (cursor.moveToNext()) {
-            int idx = cursor.getColumnIndex(Schema.ItemEntry.TITLE);
-//            String t = cursor.getString(cursor.getColumnIndex(Schema.ItemEntry.STATUS));
-//            if (t != null) Log.d(TAG, t);
-            itemList.add(cursor.getString(idx));
-        }
-
-        if (mAdapter == null) {
-            mAdapter = new ArrayAdapter<>(this,
-                    item,
-                    R.id.list_item,
-                    itemList);
-            mItemListView.setAdapter(mAdapter);
-        } else {
-            mAdapter.clear();
-            mAdapter.addAll(itemList);
-            mAdapter.notifyDataSetChanged();
+            int t_id = cursor.getColumnIndex(Schema.ItemEntry.TITLE);
+            int d_id = cursor.getColumnIndex(Schema.ItemEntry.DESC);
+            int s_id = cursor.getColumnIndex(Schema.ItemEntry.STATUS);
+            itemList.add(new ListItem(cursor.getString(t_id), cursor.getString(t_id), cursor.getString(t_id)));
         }
 
         cursor.close();
@@ -170,7 +185,7 @@ public class MainActivity extends AppCompatActivity {
         View parent = (View) view.getParent();
         TextView itemTextView = (TextView) parent.findViewById(R.id.list_item);
 
-        // strikethrough
+        // strike through
         if (checked) {
             itemTextView.setPaintFlags(itemTextView.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
         } else {
@@ -183,18 +198,14 @@ public class MainActivity extends AppCompatActivity {
         values.put(Schema.ItemEntry.STATUS, checked ? "completed" : "ongoing");
         db.update(Schema.ItemEntry.TABLE, values, Schema.ItemEntry.TITLE + " = ?", new String[]{item});
         db.close();
-        updateUI();
     }
 
-    public void deleteItem(View view) {
-        View parent = (View) view.getParent();
-        TextView itemTextView = (TextView) parent.findViewById(R.id.list_item);
-        String item = String.valueOf(itemTextView.getText());
+    public void deleteItem(ListItem item) {
+        String title = String.valueOf(item.title);
         SQLiteDatabase db = dHelper.getWritableDatabase();
         db.delete(Schema.ItemEntry.TABLE,
                 Schema.ItemEntry.TITLE + " = ?",
-                new String[]{item});
+                new String[]{title});
         db.close();
-        updateUI();
     }
 }
