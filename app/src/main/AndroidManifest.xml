@@ -22,8 +22,6 @@
         </activity>
         <activity android:name=".EditItem"
             android:windowSoftInputMode="stateHidden"></activity>
-        <activity android:name=".AddItem"
-            android:theme="@style/AppTheme.AddItemPop"></activity>
     </application>
 
 </manifest>
